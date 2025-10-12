@@ -26,6 +26,10 @@ source ~/.zsh/skim/key-bindings.zsh
 export PATH="$PATH:$HOME/.rvm/bin"
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
+export PATH=/opt/podman/bin:$PATH
+
 show_diffs() {
   git fetch production
   open -a 'firefox developer edition' -g "https://github.com/Giftly/China/compare/`git rev-parse production/master`...`git rev-parse master`"
@@ -34,3 +38,6 @@ show_diffs() {
 source <(fzf --zsh)
 eval "$(zoxide init zsh)"
 alias cd="z"
+
+# Increase the maximum amount of file descriptors in Mac OS
+ulimit -n 10240

@@ -39,6 +39,16 @@ https://github.com/zsh-users/zsh-autosuggestions
 
 https://github.com/alexpasmantier/television?tab=readme-ov-file
 
+### zioxide
+
+super charge `cd`
+
+```
+brew install zoxide
+```
+
+https://github.com/ajeetdsouza/zoxide
+
 ## starship
 
 https://starship.rs/config/
