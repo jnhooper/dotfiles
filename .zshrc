@@ -20,6 +20,9 @@ source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source ~/.zsh/skim/key-bindings.zsh
 
+export EDITOR="nvim"
+export VISUAL="$EDITOR"
+
 
 
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
