@@ -584,7 +584,12 @@ require('lazy').setup({
           map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
 
           map('K', vim.lsp.buf.hover, 'Hover Documentation')
+          local client = vim.lsp.get_client_by_id(event.data.client_id)
 
+          -- Forcefully disable Volar's hover so ts_ls can show documentation
+          if client and client.name == 'vue_ls' then
+            client.server_capabilities.hoverProvider = false
+          end
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
@@ -658,6 +663,12 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         ts_ls = {},
+        volar = {
+          on_attach = function(client)
+            -- Disable hover for Volar so ts_ls can handle it
+            client.server_capabilities.hoverProvider = false
+          end,
+        },
         --
 
         lua_ls = {
@@ -692,6 +703,12 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
         'eslint_d',
       })
+      -- [CRITICAL FIX] This loop fixes the error by swapping 'volar' for 'vue-language-server'
+      for i, name in ipairs(ensure_installed) do
+        if name == 'volar' then
+          ensure_installed[i] = 'vue-language-server'
+        end
+      end
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
@@ -700,6 +717,9 @@ require('lazy').setup({
         ensure_installed = {},
         handlers = {
           function(server_name)
+            if server_name == 'ts_ls' or server_name == 'tsserver' then
+              return
+            end
             local server = servers[server_name] or {}
             -- This handles overriding only values explicitly passed
             -- by the server configuration above. Useful when disabling
@@ -714,9 +734,10 @@ require('lazy').setup({
         root_dir = nvim_lsp.util.root_pattern('deno.json', 'deno.jsonc'),
       }
 
-      local mason_registry = require 'mason-registry'
+      -- local mason_registry = require 'mason-registry'
       -- local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_install_path() .. '/node_modules/@vue/language-server'
-      local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_installed_version() .. '/node_modules/@vue/language-server'
+      local vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
+      -- local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_installed_version() .. '/node_modules/@vue/language-server'
       nvim_lsp.ts_ls.setup {
         root_dir = nvim_lsp.util.root_pattern 'package.json',
         single_file_support = false,
@@ -729,16 +750,16 @@ require('lazy').setup({
             },
           },
         },
-        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact' },
+        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
       }
 
-      nvim_lsp.volar.setup {
-        init_options = {
-          vue = {
-            hybridMode = false,
-          },
-        },
-      }
+      -- nvim_lsp.volar.setup {
+      --   init_options = {
+      --     vue = {
+      --       hybridMode = false,
+      --     },
+      --   },
+      -- }
     end,
   },
 
