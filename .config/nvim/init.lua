@@ -730,17 +730,41 @@ require('lazy').setup({
         },
       }
       local nvim_lsp = require 'lspconfig'
-      nvim_lsp.denols.setup {
-        root_dir = nvim_lsp.util.root_pattern('deno.json', 'deno.jsonc'),
-      }
+      -- 1. Assign your custom root_dir logic directly to the Neovim global config
+      vim.lsp.config('denols', {
+        root_markers = { 'deno.json', 'deno.jsonc' },
+      })
+
+      vim.lsp.enable 'denols'
 
       -- local mason_registry = require 'mason-registry'
       -- local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_install_path() .. '/node_modules/@vue/language-server'
       local vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
       -- local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_installed_version() .. '/node_modules/@vue/language-server'
-      nvim_lsp.ts_ls.setup {
-        root_dir = nvim_lsp.util.root_pattern 'package.json',
+      -- nvim_lsp.ts_ls.setup {
+      --   root_dir = nvim_lsp.util.root_pattern 'package.json',
+      --   single_file_support = false,
+      --   init_options = {
+      --     plugins = {
+      --       {
+      --         name = '@vue/typescript-plugin',
+      --         location = vue_language_server_path,
+      --         languages = { 'vue' },
+      --       },
+      --     },
+      --   },
+      --   filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+      -- }
+      local default_ts_config = vim.lsp.config.ts_ls or {}
+      -- 1. Grab Neovim's default capabilities
+      local ts_capabilities = vim.tbl_deep_extend('force', capabilities or vim.lsp.protocol.make_client_capabilities(), { offsetEncoding = { 'utf-16' } })
+      -- 2. Deep merge your Vue settings so nothing gets accidentally deleted
+      vim.lsp.config.ts_ls = vim.tbl_deep_extend('force', default_ts_config, {
+        -- Use the native 0.11 way to find the project root!
+        root_markers = { 'package.json', '.git' },
         single_file_support = false,
+        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+        capabilities = ts_capabilities,
         init_options = {
           plugins = {
             {
@@ -750,8 +774,12 @@ require('lazy').setup({
             },
           },
         },
-        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-      }
+      })
+
+      -- IMPORTANT: Forcefully delete the old root_dir function so Neovim is forced to use our root_markers
+      vim.lsp.config.ts_ls.root_dir = nil
+
+      vim.lsp.enable 'ts_ls'
 
       -- nvim_lsp.volar.setup {
       --   init_options = {

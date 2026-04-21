@@ -93,3 +93,5 @@ export PATH="$PATH:$HOME/.rvm/bin"
 
 # Added by Antigravity
 export PATH="/Users/johnhooper/.antigravity/antigravity/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
