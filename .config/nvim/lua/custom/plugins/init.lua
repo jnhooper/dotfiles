@@ -224,5 +224,4 @@ return {
   require 'custom.plugins.configs.neotest',
   require 'custom.plugins.configs.peekup',
   require 'custom.plugins.configs.git-worktree',
-  require 'custom.plugins.configs.conform',
 }
