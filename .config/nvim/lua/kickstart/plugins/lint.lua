@@ -15,6 +15,17 @@ return {
         ruby = { 'ruby' },
       }
 
+      -- In repos that use oxlint, its language server already reports these
+      -- diagnostics, so running eslint_d as well would double them up. eslint_d stays
+      -- for every other project -- there's no eslint LSP installed to fall back on.
+      local eslint_fts = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' }
+      local function sync_js_linters()
+        local uses_oxlint = vim.fs.root(0, { '.oxlintrc.json', 'oxlint.config.ts' }) ~= nil
+        for _, ft in ipairs(eslint_fts) do
+          lint.linters_by_ft[ft] = uses_oxlint and {} or { 'eslint_d' }
+        end
+      end
+
       -- To allow other plugins to add linters to require('lint').linters_by_ft,
       -- instead set linters_by_ft like this:
       -- lint.linters_by_ft = lint.linters_by_ft or {}
@@ -53,6 +64,7 @@ return {
       vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
         group = lint_augroup,
         callback = function()
+          sync_js_linters()
           lint.try_lint()
         end,
       })

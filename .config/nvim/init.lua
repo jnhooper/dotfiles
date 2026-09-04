@@ -681,6 +681,8 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
         'eslint_d',
+        'oxlint', -- Rust linter; also an LSP, enabled by automatic_enable
+        'oxfmt', -- oxc's formatter (`oxlint --fix` is a fixer, not a formatter)
       })
       -- [CRITICAL FIX] This loop fixes the error by swapping 'volar' for 'vue-language-server'
       for i, name in ipairs(ensure_installed) do
