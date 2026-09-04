@@ -645,12 +645,10 @@ require('lazy').setup({
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
-      --  Add any additional override configuration in the following tables. Available keys are:
-      --  - cmd (table): Override the default command used to start the server
-      --  - filetypes (table): Override the default list of associated filetypes for the server
-      --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
-      --  - settings (table): Override the default settings passed when initializing the server.
-      --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      --  NOTE: this table is an INSTALL LIST ONLY. mason-lspconfig v2 removed the
+      --  `handlers` option kickstart used to read these values with, so per-server
+      --  tables here are ignored -- only the keys matter, feeding ensure_installed
+      --  below. Actual server configuration lives in `lua/custom/lsp/servers.lua`.
       local servers = {
         -- clangd = {},
         -- gopls = {},
@@ -663,29 +661,9 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         ts_ls = {},
-        volar = {
-          on_attach = function(client)
-            -- Disable hover for Volar so ts_ls can handle it
-            client.server_capabilities.hoverProvider = false
-          end,
-        },
-        --
-
-        lua_ls = {
-          -- cmd = {...},
-          -- filetypes = { ...},
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
+        -- Swapped to 'vue-language-server' for mason by the loop below.
+        volar = {},
+        lua_ls = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -694,7 +672,8 @@ require('lazy').setup({
       --    :Mason
       --
       --  You can press `g?` for help in this menu.
-      require('mason').setup()
+      --  NOTE: mason.setup() already ran via the `opts = {}` on its plugin spec above.
+      --  Calling it again re-appends every configured registry, so don't.
 
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
@@ -715,88 +694,9 @@ require('lazy').setup({
         automatic_enable = true,
         automatic_installation = true,
         ensure_installed = {},
-        handlers = {
-          function(server_name)
-            if server_name == 'ts_ls' or server_name == 'tsserver' then
-              return
-            end
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
       }
-      local nvim_lsp = require 'lspconfig'
-      -- 1. Assign your custom root_dir logic directly to the Neovim global config
-      vim.lsp.config('denols', {
-        root_markers = { 'deno.json', 'deno.jsonc' },
-      })
 
-      vim.lsp.enable 'denols'
-
-      vim.lsp.config('harper_ls', {
-        settings = {
-          ['harper-ls'] = {
-            userDictPath = '~/dict.txt',
-          },
-        },
-      })
-      vim.lsp.enable 'harper_ls'
-
-      -- local mason_registry = require 'mason-registry'
-      -- local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_install_path() .. '/node_modules/@vue/language-server'
-      local vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
-      -- local vue_language_server_path = mason_registry.get_package('vue-language-server'):get_installed_version() .. '/node_modules/@vue/language-server'
-      -- nvim_lsp.ts_ls.setup {
-      --   root_dir = nvim_lsp.util.root_pattern 'package.json',
-      --   single_file_support = false,
-      --   init_options = {
-      --     plugins = {
-      --       {
-      --         name = '@vue/typescript-plugin',
-      --         location = vue_language_server_path,
-      --         languages = { 'vue' },
-      --       },
-      --     },
-      --   },
-      --   filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-      -- }
-      local default_ts_config = vim.lsp.config.ts_ls or {}
-      -- 1. Grab Neovim's default capabilities
-      local ts_capabilities = vim.tbl_deep_extend('force', capabilities or vim.lsp.protocol.make_client_capabilities(), { offsetEncoding = { 'utf-16' } })
-      -- 2. Deep merge your Vue settings so nothing gets accidentally deleted
-      vim.lsp.config.ts_ls = vim.tbl_deep_extend('force', default_ts_config, {
-        -- Use the native 0.11 way to find the project root!
-        root_markers = { 'package.json', '.git' },
-        single_file_support = false,
-        filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-        capabilities = ts_capabilities,
-        init_options = {
-          plugins = {
-            {
-              name = '@vue/typescript-plugin',
-              location = vue_language_server_path,
-              languages = { 'vue' },
-            },
-          },
-        },
-      })
-
-      -- IMPORTANT: Forcefully delete the old root_dir function so Neovim is forced to use our root_markers
-      vim.lsp.config.ts_ls.root_dir = nil
-
-      vim.lsp.enable 'ts_ls'
-
-      -- nvim_lsp.volar.setup {
-      --   init_options = {
-      --     vue = {
-      --       hybridMode = false,
-      --     },
-      --   },
-      -- }
+      require('custom.lsp.servers').setup(capabilities)
     end,
   },
 
