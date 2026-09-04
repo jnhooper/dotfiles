@@ -153,9 +153,47 @@ return {
         vim.print = _G.dd -- Override print to use snacks for `:=` command
 
         -- Create some toggle mappings
-        Snacks.toggle.option('spell', { name = '[S]pell [C]heck' }):map '<leader>sc'
+        -- harper-ls is the spell/grammar checker, enabled at startup in
+        -- custom/lsp/servers.lua. Nothing else flips it, so a local flag is an
+        -- accurate view of its state -- unlike counting running clients, which
+        -- reads as "off" whenever the current buffer's filetype isn't one harper
+        -- attaches to. There's no public vim.lsp.is_enabled() on 0.11.
+        local harper_enabled = true
+        Snacks.toggle({
+          name = '[S]pell [C]heck',
+          color = {
+            enabled = 'azure',
+            disabled = 'orange',
+          },
+          get = function()
+            return harper_enabled
+          end,
+          set = function(state)
+            harper_enabled = state
+            vim.lsp.enable('harper_ls', state)
 
-        Snacks.toggle.option('', { name = '[S]pell [C]heck' }):map '<leader>sc'
+            if state then
+              -- vim.lsp.enable() only attaches on the next FileType event, so nudge
+              -- the buffers that are already open. Restricted to filetypes harper
+              -- actually handles, to avoid re-running unrelated FileType autocmds.
+              local fts = vim.lsp.config.harper_ls.filetypes or {}
+              for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == '' and vim.tbl_contains(fts, vim.bo[buf].filetype) then
+                  vim.api.nvim_exec_autocmds('FileType', { buffer = buf })
+                end
+              end
+            else
+              -- Disabling the config leaves running clients alone. Stopping them is
+              -- what detaches and clears harper's diagnostics. Force is needed:
+              -- harper-ls doesn't answer the graceful shutdown request, so a plain
+              -- stop() leaves it running and the toggle looks like it did nothing.
+              for _, client in ipairs(vim.lsp.get_clients { name = 'harper_ls' }) do
+                client:stop(true)
+              end
+            end
+          end,
+        }):map '<leader>sc'
+
         local copilot_exists = pcall(require, 'copilot')
 
         if copilot_exists then
