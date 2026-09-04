@@ -47,15 +47,24 @@ function M.setup(capabilities)
   -- switched off in init.lua's LspAttach so ts_ls wins for documentation.
   local vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
 
-  local ts_capabilities = vim.tbl_deep_extend('force', capabilities or vim.lsp.protocol.make_client_capabilities(), { offsetEncoding = { 'utf-16' } })
-
-  -- Deep merge onto lspconfig's shipped ts_ls config so nothing gets dropped.
-  vim.lsp.config.ts_ls = vim.tbl_deep_extend('force', vim.lsp.config.ts_ls or {}, {
-    -- Native 0.11 root detection
-    root_markers = { 'package.json', '.git' },
+  -- Use the vim.lsp.config() setter, not `vim.lsp.config.ts_ls = ...`. Indexing
+  -- vim.lsp.config returns a freshly merged copy, so assigning a whole table into it
+  -- bakes lspconfig's current defaults into our config and shadows future updates to
+  -- them -- and assigning a single field into it does nothing at all. The setter
+  -- registers overrides that get merged on read, on top of '*' and lsp/ts_ls.lua.
+  --
+  -- root_dir is deliberately left to lspconfig. Its function skips files that belong
+  -- to a Deno project, which is what keeps ts_ls from attaching alongside denols, and
+  -- it roots at the package-manager lockfile so a monorepo gets one server at the
+  -- workspace root rather than one per package. Overriding it with root_markers of
+  -- { 'package.json', '.git' } would lose both. If it ever needs to go, root_markers
+  -- alone won't do it -- vim.lsp.start only consults them when root_dir is falsy, so
+  -- it takes an explicit `root_dir = false`.
+  vim.lsp.config('ts_ls', {
     single_file_support = false,
     filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
-    capabilities = ts_capabilities,
+    -- Merges over the capabilities set on '*' above.
+    capabilities = { offsetEncoding = { 'utf-16' } },
     init_options = {
       plugins = {
         {
@@ -66,12 +75,6 @@ function M.setup(capabilities)
       },
     },
   })
-
-  -- Carried over verbatim from init.lua, but note it is a no-op: indexing
-  -- vim.lsp.config returns a freshly merged copy, so assigning into it changes
-  -- nothing. lspconfig's root_dir function is still what resolves the root, not
-  -- the root_markers above. Left in place so this move stays behaviour-preserving.
-  vim.lsp.config.ts_ls.root_dir = nil
 
   vim.lsp.enable 'ts_ls'
 
