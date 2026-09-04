@@ -23,6 +23,8 @@ return {
     -- ==========================================
     -- Helper 2: Get the Git Web URL
     -- ==========================================
+    local gitweb = require 'custom.utils.gitweb'
+
     local function get_git_url(use_default_branch)
       local dir = oil.get_current_dir()
       local entry = oil.get_cursor_entry()
@@ -31,39 +33,11 @@ return {
         return nil
       end
 
-      local absolute_path = dir .. entry.name
-
-      local git_root = vim.fn.system('git rev-parse --show-toplevel 2>/dev/null'):gsub('%s+', '')
-      if git_root == '' then
-        vim.notify('Not in a git repository', vim.log.levels.WARN)
-        return nil
+      local url, err = gitweb.url(dir .. entry.name, { default_branch = use_default_branch })
+      if not url then
+        vim.notify(err, vim.log.levels.WARN)
       end
-
-      local remote_url = vim.fn.system('git config --get remote.origin.url 2>/dev/null'):gsub('%s+', '')
-      if remote_url == '' then
-        vim.notify('No remote origin found', vim.log.levels.WARN)
-        return nil
-      end
-
-      -- Determine branch
-      local branch
-      if use_default_branch then
-        branch = 'master'
-        if vim.fn.system('git show-ref --verify refs/heads/main 2>/dev/null'):gsub('%s+', '') ~= '' then
-          branch = 'main'
-        end
-      else
-        branch = vim.fn.system('git rev-parse --abbrev-ref HEAD 2>/dev/null'):gsub('%s+', '')
-      end
-
-      -- Format URL (strip .git and convert SSH to HTTPS)
-      local web_url = remote_url:gsub('%.git$', '')
-      if web_url:match '^git@' then
-        web_url = web_url:gsub('^git@([^:]+):(.*)$', 'https://%1/%2')
-      end
-
-      local relative_to_git = absolute_path:sub(#git_root + 2)
-      return string.format('%s/blob/%s/%s', web_url, branch, relative_to_git)
+      return url
     end
 
     -- ==========================================
