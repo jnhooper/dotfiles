@@ -78,10 +78,13 @@ function M.setup(capabilities)
 
   vim.lsp.enable 'ts_ls'
 
-  -- oxlint needs no config here: mason installs it, automatic_enable turns it on, and
-  -- nvim-lspconfig ships lsp/oxlint.lua. That config is workspace_required with
-  -- root_markers { '.oxlintrc.json', 'oxlint.config.ts' }, so it only attaches in repos
-  -- that actually use oxlint. Its on_attach is what creates :LspOxlintFixAll.
+  -- oxlint needs no config -- nvim-lspconfig ships lsp/oxlint.lua -- but it does need
+  -- enabling by hand: mason-lspconfig's automatic_enable only covers servers listed in
+  -- its mappings.lua, and oxlint isn't in there, so installing the mason package alone
+  -- never starts it. The shipped config is workspace_required with root_markers
+  -- { '.oxlintrc.json', 'oxlint.config.ts' }, so it still only attaches in repos that
+  -- actually use oxlint. Its on_attach is what creates :LspOxlintFixAll.
+  vim.lsp.enable 'oxlint'
   vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('custom-lsp-servers', { clear = true }),
     callback = function(event)
