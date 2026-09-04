@@ -1,0 +1,7 @@
+[projects."github.com/Giftly/China"]
+approved-commands = [
+    "npm install",
+    "bundle install",
+    "test -f package.json && npm install || true",
+    "test -f Gemfile && bundle install || true",
+]
