@@ -416,3 +416,32 @@
 # ## Hooks
 #
 # See `wt hook` (https://worktrunk.dev/hook/) for hook types, execution order, template variables, and examples. User hooks apply to all projects; project hooks (https://worktrunk.dev/config/#project-configuration) apply only to that repository.
+
+# ─── Active configuration ────────────────────────────────────────────────────
+
+# Giftly/China: give every worktree its own test database.
+#
+# config/database.yml already reads TEST_DB_NAME (falling back to
+# `giftly_test`), so with nothing set each worktree points at the same
+# database — parallel suites then purge and migrate it under each other,
+# which shows up as deadlocks, a missing ar_internal_metadata, or specs
+# aborting on "pending migrations". `sanitize_db` renders a branch name that
+# is safe to use as one.
+#
+# .env.development.local is gitignored and holds DB_* plus the API keys, so a
+# fresh worktree cannot connect to anything until it is copied across.
+
+[[projects."github.com/Giftly/China".post-start]]
+dev-env = 'test -f .env.development.local || cp {{ repo_path }}/.env.development.local .env.development.local'
+test-env = 'printf "TEST_DB_NAME=giftly_test_{{ branch | sanitize_db }}\n" > .env.test.local'
+
+[[projects."github.com/Giftly/China".post-start]]
+deps = 'test -f Gemfile && bundle install || true'
+node = 'test -f package.json && npm install || true'
+
+[[projects."github.com/Giftly/China".post-start]]
+test-db = 'RAILS_ENV=test bin/rails db:create db:schema:load'
+
+# Without this they accumulate — each is a full copy of a ~1000-migration schema.
+[projects."github.com/Giftly/China".post-remove]
+test-db = 'dropdb --if-exists giftly_test_{{ branch | sanitize_db }}'
