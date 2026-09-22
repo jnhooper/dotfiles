@@ -17,7 +17,10 @@ return {
         typescript = { 'eslint_d' },
         typescriptreact = { 'eslint_d' },
         vue = { 'eslint_d' },
-        ruby = { 'ruby' },
+        -- No ruby here: ruby-lsp covers it. `ruby -w` reported "assigned but
+        -- unused variable - y" on the same line that ruby-lsp's Prism diagnostics
+        -- and RuboCop's Lint/UselessAssignment both already flagged -- three
+        -- reports of one problem. Put `ruby = { 'ruby' }` back to undo.
       }
 
       -- To allow other plugins to add linters to require('lint').linters_by_ft,

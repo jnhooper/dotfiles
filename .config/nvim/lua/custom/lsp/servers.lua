@@ -42,6 +42,27 @@ function M.setup(capabilities)
   })
   vim.lsp.enable 'harper_ls'
 
+  -- ruby-lsp reports RuboCop offences as diagnostics and offers each autocorrect as
+  -- a code action (<leader>ca), with `source.fixAll` for the whole file. Like oxlint
+  -- it isn't in mason-lspconfig's mappings.lua, so automatic_enable won't start it.
+  --
+  -- Not installed through mason: its package is a gem shim bound to whichever Ruby
+  -- was active at install time, which breaks the moment that Ruby goes away. Use the
+  -- gem under the mise-managed Ruby instead (`gem install ruby-lsp`). ruby-lsp builds
+  -- a composed bundle in the project's .ruby-lsp/ that evals the app's own Gemfile,
+  -- so project cops -- including the custom ones in lib/custom_cops -- resolve.
+  -- `rubocop_internal` rather than `rubocop`: since RuboCop v1.70 the bare `rubocop`
+  -- identifier hands over to the add-on shipped in the rubocop gem, and ruby-lsp
+  -- announces that swap through window/showMessage on every start. Both produce
+  -- identical diagnostics here, so take the one that doesn't warn.
+  vim.lsp.config('ruby_lsp', {
+    init_options = {
+      formatter = 'rubocop_internal',
+      linters = { 'rubocop_internal' },
+    },
+  })
+  vim.lsp.enable 'ruby_lsp'
+
   -- ts_ls + @vue/typescript-plugin, i.e. Volar "hybrid mode": ts_ls owns TypeScript
   -- intelligence inside .vue files while vue_ls owns the template. vue_ls's hover is
   -- switched off in init.lua's LspAttach so ts_ls wins for documentation.
