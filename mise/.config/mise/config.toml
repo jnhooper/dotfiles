@@ -1,0 +1,23 @@
+# Global mise config. Stow with `stow --no-folding -t ~ mise`: mise follows a
+# symlinked config file but not a symlinked config directory, so a plain
+# `stow -t ~ mise` folds the directory and mise silently reads no config at all.
+# Any project-level mise.toml, .ruby-version or .nvmrc overrides these.
+
+[tools]
+node = "24"
+pnpm = "11"
+ruby = "4.0.6"
+
+# Neovim's ruby-lsp, for RuboCop diagnostics and autocorrect code actions.
+# Here rather than in Mason: Mason installs it as a gem against whichever Ruby
+# happens to be active, then never rebuilds, so its native extensions (prism,
+# rbs) break on the next Ruby upgrade. mise ties it to the Ruby above instead.
+# Pinned to 0.26 rather than "latest" because latest currently resolves to a
+# 0.27 prerelease.
+"gem:ruby-lsp" = "0.26"
+
+[settings]
+# Most repos here (Giftly/China included) pin versions with .ruby-version and
+# .nvmrc rather than a mise.toml, and mise ignores those files unless the tool
+# opts in.
+idiomatic_version_file_enable_tools = ["node", "ruby"]
