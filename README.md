@@ -57,3 +57,29 @@ https://starship.rs/config/
 
 `mkdir -p ~/.config && touch ~/.config/starship.toml` copy `starship.toml` into
 that file
+
+## mise
+
+https://mise.jdx.dev/
+
+Manages ruby, node and pnpm (replaced rvm and volta). Global defaults live in
+`mise/.config/mise/config.toml`; per-project `.ruby-version` / `.nvmrc` files win
+over them, which only works because the config opts those tools into
+`idiomatic_version_file_enable_tools`.
+
+```
+curl https://mise.run | sh   # installs to ~/.local/bin/mise
+stow --no-folding -t ~ mise
+mise install                 # ruby is a source build, give it a while
+```
+
+`--no-folding` matters here. Without it stow links the whole directory
+(`~/.config/mise -> ../dotfiles/mise/.config/mise`), and mise then finds no
+config at all — `mise doctor` reports an empty `config_files` and every tool
+falls back to the system version. It follows a symlinked config *file* but not a
+symlinked config *directory*, so the target has to stay a real directory with
+`config.toml` linked inside it.
+
+Activation is split across the two zsh startup files: `.zprofile` adds the shims
+so non-interactive shells (editors, CI, Claude Code) still see the tools, and
+`.zshrc` runs the full `mise activate zsh` for interactive shells.

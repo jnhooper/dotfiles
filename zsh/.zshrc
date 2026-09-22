@@ -299,7 +299,6 @@ source ~/.zsh/skim/key-bindings.zsh
 export EDITOR="nvim"
 export VISUAL="$EDITOR"
 
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 
 show_diffs() {
@@ -314,12 +313,8 @@ export _ZO_DOCTOR=0
 eval "$(zoxide init zsh)"
 alias cd="z"
 
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
-
 # Added by Antigravity
 export PATH="/Users/johnhooper/.antigravity/antigravity/bin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 
 # Added by LM Studio CLI (lms)
@@ -335,5 +330,15 @@ case ":$PATH:" in
 esac
 # pnpm end
 #
+# mise (ruby, node, pnpm, ...). Must come after every PATH export above so the
+# active tool versions win; .zprofile's shim activation covers non-interactive
+# shells.
+eval "$(mise activate zsh)"
+
 autoload -Uz compinit && compinit
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+
+# Start a new branch and its worktree in one go: `wtc feature/auth`.
+# Has to be a shell alias rather than a worktrunk [aliases] entry, since those
+# run in a subprocess and `wt switch` cds via the shell function defined above.
+alias wtc="wt switch --create"
